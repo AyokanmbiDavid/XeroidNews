@@ -1,7 +1,6 @@
-const API_KEY = '9c744a0f8934447eae399b3ab9802ad2';
+const API_KEY = 'pub_42e9fc3d5f024a249292caf9f3aef7f6';
 const STORAGE_KEY = 'XeroidNews_Wishlist';
 
-let currentPage = 1;
 let currentArticles = [];
 let currentLang = 'en';
 let wishlist = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -25,38 +24,45 @@ window.toggleMenu = () => {
     }
 };
 
-// --- 2. API FETCHING (With Vercel Fix) ---
+// --- 2. API FETCHING (Updated for NewsData.io) ---
 window.fetchNews = async (query = 'trending', isLoadMore = false, category = '') => {
     const grid = document.getElementById('newsGrid');
     if (!grid) return;
 
     if (!isLoadMore) {
         grid.innerHTML = Array(3).fill('<div class="skeleton w-full aspect-[4/5] rounded-[45px] bg-slate-200 animate-pulse"></div>').join('');
-        currentPage = 1;
     }
 
-    const searchQuery = query || 'latest';
-    let targetUrl = `https://newsapi.org/v2/everything?q=${searchQuery}&language=${currentLang}&pageSize=10&page=${currentPage}&apiKey=${API_KEY}`;
+    // NewsData.io URL format
+    let targetUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&q=${query}`;
     
     if (category) {
-        targetUrl = `https://newsapi.org/v2/top-headlines?category=${category}&language=${currentLang}&pageSize=10&page=${currentPage}&apiKey=${API_KEY}`;
+        targetUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&category=${category}`;
         const title = document.getElementById('viewTitle');
         if(title) title.innerText = category.charAt(0).toUpperCase() + category.slice(1);
     }
 
-    // CORS Proxy for Vercel Deployment
-    const proxiedUrl = `https://corsproxy.io/?` + encodeURIComponent(targetUrl);
-
     try {
-        const response = await fetch(proxiedUrl);
+        const response = await fetch(targetUrl);
         const data = await response.json();
         
-        if (data.articles) {
-            currentArticles = isLoadMore ? [...currentArticles, ...data.articles] : data.articles;
+        if (data.results) {
+            // Map NewsData fields to match your original UI variables
+            const formattedArticles = data.results.map(art => ({
+                title: art.title,
+                description: art.description || 'No description available.',
+                content: art.content || art.description || 'Full content available at the source.',
+                url: art.link,
+                urlToImage: art.image_url || 'https://via.placeholder.com/600',
+                source: { name: art.source_id || 'News' },
+                publishedAt: art.pubDate
+            }));
+
+            currentArticles = isLoadMore ? [...currentArticles, ...formattedArticles] : formattedArticles;
             renderHome(currentArticles);
         }
     } catch (e) {
-        grid.innerHTML = `<p class="text-center py-10 opacity-50">Connection Error. Please refresh.</p>`;
+        grid.innerHTML = `<p class="text-center py-10 opacity-50">Connection Error or API Limit reached.</p>`;
     }
 };
 
@@ -72,7 +78,7 @@ window.changeLang = () => {
     window.toggleMenu();
 };
 
-// --- 4. HOME RENDERING (Limited Details) ---
+// --- 4. HOME RENDERING ---
 function renderHome(articles) {
     const grid = document.getElementById('newsGrid');
     if (!grid) return;
@@ -82,11 +88,11 @@ function renderHome(articles) {
         return `
         <div class="group cursor-pointer" onclick="window.goToDetails(${index})">
             <div class="relative w-full aspect-[4/5] rounded-[45px] overflow-hidden shadow-xl mb-4">
-                <img src="${art.urlToImage || 'https://via.placeholder.com/600'}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
+                <img src="${art.urlToImage}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" onerror="this.src='https://via.placeholder.com/600'">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent p-8 flex flex-col justify-end">
                     <span class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-1">${art.source.name}</span>
                     <h3 class="text-white text-xl font-bold leading-tight line-clamp-2">${art.title}</h3>
-                    <p class="text-white/60 text-xs mt-2 line-clamp-2">${art.description || 'Tap to read the full story.'}</p>
+                    <p class="text-white/60 text-xs mt-2 line-clamp-2">${art.description}</p>
                 </div>
                 <button onclick="event.stopPropagation(); window.toggleWishlist(${index})" class="absolute top-6 right-6 w-12 h-12 glass rounded-full flex items-center justify-center text-white">
                     <span class="material-symbols-outlined ${isFav ? 'fill-1 text-red-500' : ''}">favorite</span>
@@ -117,7 +123,7 @@ window.renderWishlist = () => {
     grid.innerHTML = wishlist.map((art, i) => `
         <div class="group cursor-pointer" onclick="window.goToWishlistDetails(${i})">
             <div class="relative w-full aspect-[4/5] rounded-[45px] overflow-hidden shadow-xl mb-4">
-                <img src="${art.urlToImage || 'https://via.placeholder.com/600'}" class="w-full h-full object-cover">
+                <img src="${art.urlToImage}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/600'">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent p-8 flex flex-col justify-end">
                     <h3 class="text-white text-xl font-bold line-clamp-2">${art.title}</h3>
                 </div>
@@ -156,20 +162,17 @@ window.renderDetailsPage = () => {
     const art = JSON.parse(rawData);
     const related = JSON.parse(localStorage.getItem('Xeroid_Related')) || [];
 
-    // Cleaning the content of the "[+xxxx chars]" tag NewsAPI adds
-    const fullText = art.content ? art.content.replace(/\[\+\d+ chars\]/g, "") : "";
-
     container.innerHTML = `
         <div class="animate-in fade-in duration-700">
             <div class="w-full h-80 rounded-[45px] overflow-hidden mb-6 shadow-xl relative">
-                <img src="${art.urlToImage || 'https://via.placeholder.com/600'}" class="w-full h-full object-cover">
+                <img src="${art.urlToImage}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/600'">
             </div>
             <span class="text-indigo-600 font-bold text-xs uppercase tracking-widest">${art.source.name}</span>
             <h1 class="text-2xl font-bold text-slate-900 mt-2 mb-4 leading-tight">${art.title}</h1>
             
             <div class="text-slate-700 leading-relaxed mb-8 space-y-4 text-lg">
-                <p class="font-semibold text-slate-900 italic">"${art.description || ''}"</p>
-                <p>${fullText || 'Full content text is being retrieved from the source...'}</p>
+                <p class="font-semibold text-slate-900 italic">"${art.description}"</p>
+                <p>${art.content}</p>
             </div>
 
             <a href="${art.url}" target="_blank" class="w-full py-5 bg-slate-900 text-white rounded-[30px] font-bold flex items-center justify-center gap-2 mb-12 shadow-lg">
@@ -180,7 +183,7 @@ window.renderDetailsPage = () => {
             <div class="space-y-4 pb-20">
                 ${related.map(r => `
                     <div class="glass p-3 rounded-[32px] flex gap-4 items-center border-none">
-                        <img src="${r.urlToImage || 'https://via.placeholder.com/200'}" class="w-16 h-16 rounded-2xl object-cover">
+                        <img src="${r.urlToImage || 'https://via.placeholder.com/200'}" class="w-16 h-16 rounded-2xl object-cover" onerror="this.src='https://via.placeholder.com/600'">
                         <h4 class="text-[11px] font-bold line-clamp-2">${r.title}</h4>
                     </div>`).join('')}
             </div>
@@ -223,4 +226,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.searchNews = () => window.fetchNews(document.getElementById('newsQuery').value || 'trending');
-window.loadMore = () => { currentPage++; window.fetchNews('trending', true); };
