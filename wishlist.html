@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XeroidNews | Wishlist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="pb-28">
+    <header class="p-6 max-w-xl mx-auto flex items-center justify-between sticky top-0 bg-[#f8f9fd]/90 backdrop-blur-md z-40">
+        <h2 class="text-2xl font-bold">Saved Stories</h2>
+        <a href="index.html" class="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-400"><span class="material-symbols-outlined">close</span></a>
+    </header>
+    <main id="wishlistGrid" class="max-w-xl mx-auto px-6 space-y-10"></main>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => window.renderWishlist());
+    </script>
+</body>
+</html>
