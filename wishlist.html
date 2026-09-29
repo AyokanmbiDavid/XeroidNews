@@ -1,22 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XeroidNews | Wishlist</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XeroidNews | Saved Stories</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0" />
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="pb-28">
-    <header class="p-6 max-w-xl mx-auto flex items-center justify-between sticky top-0 bg-[#f8f9fd]/90 backdrop-blur-md z-40">
-        <h2 class="text-2xl font-bold">Saved Stories</h2>
-        <a href="index.html" class="w-10 h-10 rounded-full glass flex items-center justify-center text-slate-400"><span class="material-symbols-outlined">close</span></a>
+<body class="bg-[#121316] text-[#e3e2e6] min-h-screen selection:bg-[#004a77] selection:text-[#c2e7ff] pb-32">
+
+    <div id="snackbar" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 min-w-[280px] bg-[#2e3036] text-[#e3e2e6] rounded-2xl p-4 hidden flex items-center gap-3 border border-white/10 shadow-2xl">
+        <span class="material-symbols-rounded text-[#a8c7fa]" id="snackIcon">info</span>
+        <span id="snackText" class="text-xs font-medium">Notification message</span>
+    </div>
+
+    <header class="p-4 sm:p-6 sticky top-0 bg-[#121316]/85 backdrop-blur-2xl z-40 border-b border-white/5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#004a77] text-[#c2e7ff] rounded-2xl flex items-center justify-center border border-white/10 shadow-md">
+                    <span class="material-symbols-rounded">bookmarks</span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white leading-none">Saved Stories</h1>
+                    <span class="text-[10px] text-[#a8c7fa] font-semibold tracking-wider uppercase">Your Intel Library</span>
+                </div>
+            </div>
+
+            <a href="index.html" class="w-10 h-10 rounded-full bg-[#1e1f23] text-[#e3e2e6] flex items-center justify-center border border-white/5 hover:bg-[#28292e] active:scale-90 transition-all shadow-md">
+                <span class="material-symbols-rounded text-lg">close</span>
+            </a>
+        </div>
     </header>
-    <main id="wishlistGrid" class="max-w-xl mx-auto px-6 space-y-10"></main>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10">
+        <div id="wishlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </main>
+
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xs bg-[#1e1f23]/90 backdrop-blur-2xl border border-white/10 p-2.5 rounded-full flex justify-around items-center z-50 shadow-2xl">
+        <a href="index.html" class="flex flex-col items-center group text-[#8e919e] hover:text-white transition-colors">
+            <div class="px-5 py-1.5 rounded-full group-active:scale-90">
+                <span class="material-symbols-rounded text-sm">home</span>
+            </div>
+            <span class="text-[10px] font-bold mt-1">Home</span>
+        </a>
+        <a href="wishlist.html" class="flex flex-col items-center group">
+            <div class="bg-[#004a77] text-[#c2e7ff] px-5 py-1.5 rounded-full transition-all group-active:scale-90">
+                <span class="material-symbols-rounded text-sm" style="font-variation-settings: 'FILL' 1">favorite</span>
+            </div>
+            <span class="text-[10px] font-bold mt-1 text-[#a8c7fa]">Saved</span>
+        </a>
+    </nav>
+
     <script src="script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => window.renderWishlist());
-    </script>
 </body>
 </html>

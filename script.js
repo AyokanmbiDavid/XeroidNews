@@ -5,7 +5,26 @@ let currentArticles = [];
 let currentLang = 'en';
 let wishlist = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-// --- 1. SIDEBAR TOGGLE LOGIC ---
+// --- TOAST NOTIFICATION ---
+function showToast(msg, icon = "info") {
+    const snack = document.getElementById("snackbar");
+    const snackText = document.getElementById("snackText");
+    const snackIcon = document.getElementById("snackIcon");
+
+    if (!snack) return;
+    if (snackText) snackText.innerText = msg;
+    if (snackIcon) snackIcon.innerText = icon;
+
+    snack.classList.remove('hidden');
+    snack.classList.add('show');
+
+    setTimeout(() => {
+        snack.classList.remove('show');
+        snack.classList.add('hidden');
+    }, 3000);
+}
+
+// --- SIDEBAR TOGGLE ---
 window.toggleMenu = () => {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -24,22 +43,26 @@ window.toggleMenu = () => {
     }
 };
 
-// --- 2. API FETCHING (Updated for NewsData.io) ---
+// --- API FETCHING (Updated Skeleton Animation) ---
 window.fetchNews = async (query = 'trending', isLoadMore = false, category = '') => {
     const grid = document.getElementById('newsGrid');
     if (!grid) return;
 
     if (!isLoadMore) {
-        grid.innerHTML = Array(3).fill('<div class="skeleton w-full aspect-[4/5] rounded-[45px] bg-slate-200 animate-pulse"></div>').join('');
+        grid.innerHTML = `
+            <div class="col-span-1 md:col-span-2 h-[420px] bg-[#1e1f23] rounded-[32px] border border-white/5 animate-pulse"></div>
+            <div class="h-[420px] bg-[#1e1f23] rounded-[32px] border border-white/5 animate-pulse"></div>
+            <div class="h-[420px] bg-[#1e1f23] rounded-[32px] border border-white/5 animate-pulse"></div>
+            <div class="h-[420px] bg-[#1e1f23] rounded-[32px] border border-white/5 animate-pulse"></div>
+        `;
     }
 
-    // NewsData.io URL format
     let targetUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&q=${query}`;
     
     if (category) {
         targetUrl = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&category=${category}`;
         const title = document.getElementById('viewTitle');
-        if(title) title.innerText = category.charAt(0).toUpperCase() + category.slice(1);
+        if (title) title.innerText = category.charAt(0).toUpperCase() + category.slice(1);
     }
 
     try {
@@ -47,67 +70,123 @@ window.fetchNews = async (query = 'trending', isLoadMore = false, category = '')
         const data = await response.json();
         
         if (data.results) {
-            // Map NewsData fields to match your original UI variables
             const formattedArticles = data.results.map(art => ({
                 title: art.title,
                 description: art.description || 'No description available.',
-                content: art.content || art.description || 'Full content available at the source.',
+                content: art.content || art.description || 'Full content available at source link.',
                 url: art.link,
-                urlToImage: art.image_url || 'https://via.placeholder.com/600',
+                urlToImage: art.image_url || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800',
                 source: { name: art.source_id || 'News' },
                 publishedAt: art.pubDate
             }));
 
             currentArticles = isLoadMore ? [...currentArticles, ...formattedArticles] : formattedArticles;
+            localStorage.setItem('xeroid_news_cache', JSON.stringify(currentArticles));
             renderHome(currentArticles);
         }
     } catch (e) {
-        grid.innerHTML = `<p class="text-center py-10 opacity-50">Connection Error or API Limit reached.</p>`;
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <span class="material-symbols-rounded text-6xl text-red-400">error</span>
+                <p class="text-[#8e919e] mt-4 font-bold">Failed to load content.</p>
+            </div>`;
     }
 };
 
-// --- 3. CATEGORY & LANG HELPERS ---
+// --- UPDATED HOME GRID RENDER (M3 Featured Layout) ---
+function renderHome(articles) {
+    const grid = document.getElementById('newsGrid');
+    if (!grid) return;
+
+    if (articles.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <span class="material-symbols-rounded text-6xl text-[#8e919e]">search_off</span>
+                <p class="text-[#8e919e] mt-4 font-bold">No articles found.</p>
+            </div>`;
+        return;
+    }
+
+    grid.innerHTML = articles.map((art, index) => {
+        const isFav = wishlist.some(i => i.url === art.url);
+        const isFeatured = index === 0;
+
+        return `
+        <article onclick="window.goToDetails(${index})" 
+                 class="${isFeatured ? 'col-span-1 md:col-span-2' : 'col-span-1'} 
+                        group relative bg-[#1e1f23] hover:bg-[#25262b] border border-white/10 hover:border-[#a8c7fa]/40 
+                        rounded-[32px] p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 
+                        cursor-pointer shadow-lg hover:shadow-2xl">
+            
+            <div>
+                <!-- Image Box -->
+                <div class="relative w-full ${isFeatured ? 'h-64 sm:h-72' : 'h-52'} rounded-[24px] overflow-hidden bg-[#121316] mb-4">
+                    <img src="${art.urlToImage}" 
+                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
+                         onerror="this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800'"
+                         alt="Article thumbnail">
+                    
+                    <!-- Overlay Badges -->
+                    <div class="absolute top-3 left-3 flex items-center gap-2">
+                        <span class="bg-[#121316]/80 backdrop-blur-md text-[#c2e7ff] text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 uppercase tracking-wider">
+                            ${art.source.name}
+                        </span>
+                        ${isFeatured ? `<span class="bg-[#004a77] text-[#c2e7ff] text-[10px] font-bold px-3 py-1 rounded-full border border-white/20 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-rounded text-xs">star</span> Lead Story
+                        </span>` : ''}
+                    </div>
+
+                    <!-- Bookmark FAB -->
+                    <button onclick="event.stopPropagation(); window.toggleWishlist(${index})" 
+                            class="absolute top-3 right-3 w-10 h-10 rounded-full ${isFav ? 'bg-red-500 text-white' : 'bg-[#121316]/70 text-white hover:bg-black/80'} 
+                                   backdrop-blur-md flex items-center justify-center border border-white/20 active:scale-90 transition-all z-20 shadow-md">
+                        <span class="material-symbols-rounded text-lg" style="font-variation-settings: 'FILL' ${isFav ? 1 : 0}">favorite</span>
+                    </button>
+                </div>
+
+                <!-- Article Content -->
+                <h3 class="${isFeatured ? 'text-xl sm:text-2xl' : 'text-base'} font-bold text-white group-hover:text-[#a8c7fa] leading-snug line-clamp-2 mb-2 transition-colors">
+                    ${art.title}
+                </h3>
+
+                <p class="text-[#c4c6d0] text-xs sm:text-sm leading-relaxed line-clamp-2 mb-4">
+                    ${art.description}
+                </p>
+            </div>
+
+            <!-- Card Action Footer -->
+            <div class="flex items-center justify-between pt-2 border-t border-white/5 mt-2">
+                <span class="text-[11px] font-semibold text-[#8e919e] flex items-center gap-1">
+                    <span class="material-symbols-rounded text-sm">schedule</span>
+                    ${art.publishedAt ? new Date(art.publishedAt).toLocaleDateString() : 'Recent'}
+                </span>
+
+                <div class="w-8 h-8 rounded-full bg-[#2b2c30] group-hover:bg-[#004a77] text-[#c2e7ff] flex items-center justify-center transition-all group-hover:translate-x-1">
+                    <span class="material-symbols-rounded text-sm">arrow_forward</span>
+                </div>
+            </div>
+        </article>`;
+    }).join('');
+}
+
+
+// --- CATEGORY HELPERS ---
 window.fetchByCategory = (cat) => {
     window.fetchNews('', false, cat);
     window.toggleMenu();
 };
 
-window.changeLang = () => {
-    currentLang = document.getElementById('langSelect').value;
-    window.fetchNews('trending');
-    window.toggleMenu();
-};
-
-// --- 4. HOME RENDERING ---
-function renderHome(articles) {
-    const grid = document.getElementById('newsGrid');
-    if (!grid) return;
-
-    grid.innerHTML = articles.map((art, index) => {
-        const isFav = wishlist.some(i => i.url === art.url);
-        return `
-        <div class="group cursor-pointer" onclick="window.goToDetails(${index})">
-            <div class="relative w-full aspect-[4/5] rounded-[45px] overflow-hidden shadow-xl mb-4">
-                <img src="${art.urlToImage}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" onerror="this.src='https://via.placeholder.com/600'">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent p-8 flex flex-col justify-end">
-                    <span class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-1">${art.source.name}</span>
-                    <h3 class="text-white text-xl font-bold leading-tight line-clamp-2">${art.title}</h3>
-                    <p class="text-white/60 text-xs mt-2 line-clamp-2">${art.description}</p>
-                </div>
-                <button onclick="event.stopPropagation(); window.toggleWishlist(${index})" class="absolute top-6 right-6 w-12 h-12 glass rounded-full flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined ${isFav ? 'fill-1 text-red-500' : ''}">favorite</span>
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// --- 5. WISHLIST LOGIC ---
+// --- WISHLIST LOGIC ---
 window.toggleWishlist = (index) => {
     const art = currentArticles[index];
     const foundIdx = wishlist.findIndex(item => item.url === art.url);
-    if (foundIdx > -1) wishlist.splice(foundIdx, 1);
-    else wishlist.push(art);
+    if (foundIdx > -1) {
+        wishlist.splice(foundIdx, 1);
+        showToast("Removed from Library", "delete");
+    } else {
+        wishlist.push(art);
+        showToast("Saved to Library", "bookmark");
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
     updateWishlistUI();
     renderHome(currentArticles);
@@ -116,21 +195,27 @@ window.toggleWishlist = (index) => {
 window.renderWishlist = () => {
     const grid = document.getElementById('wishlistGrid');
     if (!grid) return;
+
     if (wishlist.length === 0) {
-        grid.innerHTML = `<div class="text-center py-20 opacity-30"><p>Empty Wishlist</p></div>`;
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-20">
+                <span class="material-symbols-rounded text-6xl text-[#8e919e]">folder_off</span>
+                <p class="text-[#8e919e] mt-4 font-bold text-sm">Your library is empty</p>
+            </div>`;
         return;
     }
+
     grid.innerHTML = wishlist.map((art, i) => `
-        <div class="group cursor-pointer" onclick="window.goToWishlistDetails(${i})">
-            <div class="relative w-full aspect-[4/5] rounded-[45px] overflow-hidden shadow-xl mb-4">
-                <img src="${art.urlToImage}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/600'">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent p-8 flex flex-col justify-end">
-                    <h3 class="text-white text-xl font-bold line-clamp-2">${art.title}</h3>
-                </div>
-                <button onclick="event.stopPropagation(); window.removeWishlist(${i})" class="absolute top-6 right-6 w-12 h-12 glass rounded-full flex items-center justify-center text-red-500">
-                    <span class="material-symbols-outlined fill-1">delete</span>
-                </button>
+        <div class="bg-[#1e1f23] border border-white/5 p-4 rounded-3xl flex items-center gap-4 hover:bg-[#28292e] transition-all cursor-pointer relative group" 
+             onclick="window.goToWishlistDetails(${i})">
+            <img src="${art.urlToImage}" class="w-20 h-24 object-cover rounded-2xl flex-shrink-0" onerror="this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800'">
+            <div class="flex-grow pr-8">
+                <span class="text-[#a8c7fa] bg-[#004a77] px-2 py-0.5 rounded-full text-[9px] font-bold uppercase inline-block mb-1">${art.source.name}</span>
+                <h3 class="font-bold text-white text-sm line-clamp-2 leading-tight">${art.title}</h3>
             </div>
+            <button onclick="event.stopPropagation(); window.removeWishlist(${i})" class="absolute right-3 p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-all">
+                <span class="material-symbols-rounded text-lg">delete</span>
+            </button>
         </div>`).join('');
 };
 
@@ -139,18 +224,17 @@ window.removeWishlist = (i) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
     window.renderWishlist();
     updateWishlistUI();
+    showToast("Removed from Library", "delete");
 };
 
-// --- 6. NAVIGATION & FULL DETAILS ---
+// --- NAVIGATION & DETAILS ---
 window.goToDetails = (index) => {
     localStorage.setItem('Xeroid_Temp_Article', JSON.stringify(currentArticles[index]));
-    localStorage.setItem('Xeroid_Related', JSON.stringify(currentArticles.slice(0, 5)));
     window.location.href = 'details.html';
 };
 
 window.goToWishlistDetails = (index) => {
     localStorage.setItem('Xeroid_Temp_Article', JSON.stringify(wishlist[index]));
-    localStorage.setItem('Xeroid_Related', JSON.stringify(wishlist.slice(0, 5)));
     window.location.href = 'details.html';
 };
 
@@ -160,33 +244,29 @@ window.renderDetailsPage = () => {
     if (!container || !rawData) return;
 
     const art = JSON.parse(rawData);
-    const related = JSON.parse(localStorage.getItem('Xeroid_Related')) || [];
+    const isFav = wishlist.some(item => item.url === art.url);
 
     container.innerHTML = `
-        <div class="animate-in fade-in duration-700">
-            <div class="w-full h-80 rounded-[45px] overflow-hidden mb-6 shadow-xl relative">
-                <img src="${art.urlToImage}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/600'">
-            </div>
-            <span class="text-indigo-600 font-bold text-xs uppercase tracking-widest">${art.source.name}</span>
-            <h1 class="text-2xl font-bold text-slate-900 mt-2 mb-4 leading-tight">${art.title}</h1>
-            
-            <div class="text-slate-700 leading-relaxed mb-8 space-y-4 text-lg">
-                <p class="font-semibold text-slate-900 italic">"${art.description}"</p>
-                <p>${art.content}</p>
+        <div class="bg-[#1e1f23] rounded-[36px] border border-white/10 p-4 sm:p-6 shadow-2xl">
+            <div class="relative rounded-2xl overflow-hidden aspect-video mb-6 bg-[#121316]">
+                <img src="${art.urlToImage}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800'">
             </div>
 
-            <a href="${art.url}" target="_blank" class="w-full py-5 bg-slate-900 text-white rounded-[30px] font-bold flex items-center justify-center gap-2 mb-12 shadow-lg">
-                <span class="material-symbols-outlined">language</span> Read Full Article on ${art.source.name}
+            <span class="bg-[#004a77] text-[#c2e7ff] text-[10px] font-bold px-3 py-1 rounded-full border border-white/10 uppercase tracking-widest inline-block mb-3">
+                ${art.source.name}
+            </span>
+
+            <h1 class="text-2xl font-bold text-white mb-6 leading-tight">${art.title}</h1>
+
+            <div class="bg-[#28292e] p-4 rounded-2xl border-l-4 border-[#a8c7fa] mb-6">
+                <p class="text-[#c4c6d0] text-sm italic">${art.description}</p>
+            </div>
+
+            <p class="text-[#e3e2e6] text-sm sm:text-base leading-relaxed mb-8">${art.content}</p>
+
+            <a href="${art.url}" target="_blank" class="w-full py-4 bg-[#004a77] hover:bg-[#005b93] text-[#c2e7ff] rounded-2xl font-bold flex items-center justify-center gap-2 border border-white/10 active:scale-95 transition-all shadow-lg text-sm">
+                <span class="material-symbols-rounded text-base">launch</span> Read Full Article
             </a>
-
-            <h2 class="text-lg font-bold mb-6">More from this feed</h2>
-            <div class="space-y-4 pb-20">
-                ${related.map(r => `
-                    <div class="glass p-3 rounded-[32px] flex gap-4 items-center border-none">
-                        <img src="${r.urlToImage || 'https://via.placeholder.com/200'}" class="w-16 h-16 rounded-2xl object-cover" onerror="this.src='https://via.placeholder.com/600'">
-                        <h4 class="text-[11px] font-bold line-clamp-2">${r.title}</h4>
-                    </div>`).join('')}
-            </div>
         </div>`;
 };
 
@@ -198,7 +278,7 @@ function updateWishlistUI() {
     }
 }
 
-// --- 7. SHARE & INITIALIZATION ---
+// --- SHARE ---
 window.shareNews = () => {
     const rawData = localStorage.getItem('Xeroid_Temp_Article');
     if (!rawData) return;
@@ -206,12 +286,12 @@ window.shareNews = () => {
     if (navigator.share) {
         navigator.share({ title: art.title, url: art.url });
     } else {
-        alert("Link: " + art.url);
+        navigator.clipboard.writeText(art.url);
+        showToast("Link copied to clipboard", "content_copy");
     }
 };
 
-window.SharedNews = window.shareNews; 
-
+// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('newsGrid')) {
         window.fetchNews('trending');

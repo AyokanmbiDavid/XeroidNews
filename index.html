@@ -1,293 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XeroidNews | M3</title>
+    <title>XeroidNews | Intel Feed</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        m3Bg: '#FDFBFF',
-                        m3Surf: '#F3F4F9',
-                        m3Prim: '#0061A4',
-                        m3OnSurf: '#1A1C1E',
-                        m3PrimCont: '#D1E4FF',
-                        m3SecCont: '#E1E2EC',
-                        m3Err: '#BA1A1A',
-                        m3InverseSurf: '#2F3033',
-                        m3InverseOnSurf: '#F1F0F4'
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
-        body { background-color: #FDFBFF; color: #1A1C1E; overflow-x: hidden; }
-        
-        .m3-card { background: #F3F4F9; border-radius: 28px; transition: transform 0.2s, background 0.2s; }
-        .m3-card:active { transform: scale(0.98); background: #E1E2EC; }
-        
-        .view { display: none; }
-        .view.active { display: block; animation: m3-slide-up 0.4s cubic-bezier(0, 0, 0.2, 1); }
-        @keyframes m3-slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Snackbar (Toast) Animation */
-        #snackbar {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #2F3033;
-            color: #F1F0F4;
-            text-align: center;
-            border-radius: 12px;
-            padding: 14px 24px;
-            position: fixed;
-            z-index: 100;
-            left: 50%;
-            bottom: 100px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        #snackbar.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from { bottom: 80px; opacity: 0; } to { bottom: 100px; opacity: 1; } }
-        @keyframes fadeout { from { bottom: 100px; opacity: 1; } to { bottom: 80px; opacity: 0; } }
-
-        .search-anchor { background: #EEF0F6; border-radius: 28px; padding: 12px 20px; }
-        .nav-pill { height: 32px; width: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
-        .nav-item.active .nav-pill { background: #D1E4FF; color: #001D35; }
-        
-        .skeleton { background: linear-gradient(90deg, #e0e2e8 25%, #f0f2f8 50%, #e0e2e8 75%); background-size: 200% 100%; animation: load 1.5s infinite; }
-        @keyframes load { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0" />
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="pb-28">
+<body class="pb-36 min-h-screen bg-[#121316] text-[#e3e2e6] selection:bg-[#004a77] selection:text-[#c2e7ff]">
 
-    <div id="snackbar">Notification Text</div>
+    <!-- Material 3 Toast / Snackbar -->
+    <div id="snackbar" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 min-w-[280px] bg-[#2e3036] text-[#e3e2e6] rounded-2xl p-4 hidden flex items-center gap-3 border border-white/10 shadow-2xl">
+        <span class="material-symbols-rounded text-[#a8c7fa]" id="snackIcon">info</span>
+        <span id="snackText" class="text-xs font-medium">Notification message</span>
+    </div>
 
-    <div id="sidebarOverlay" onclick="window.toggleMenu()" class="fixed inset-0 bg-black/40 z-[60] hidden"></div>
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 bg-m3Bg z-[70] p-4 -translate-x-full transition-transform duration-400 ease-in-out rounded-r-[28px]">
-        <div class="p-4 mb-4 font-bold text-m3Prim text-xl tracking-tight">Xeroid Intelligence</div>
-        <div class="space-y-1">
-            <button onclick="window.fetchByCategory('technology')" class="w-full text-left py-4 px-6 rounded-full hover:bg-m3SecCont flex items-center gap-4 text-sm font-medium">
-                <span class="material-symbols-rounded">devices</span> Technology
+    <!-- Navigation Drawer Overlay -->
+    <div id="sidebarOverlay" onclick="window.toggleMenu()" class="fixed inset-0 bg-black/60 z-[60] hidden backdrop-blur-sm"></div>
+    
+    <!-- Sidebar / Drawer -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-80 bg-[#1e1f23] z-[70] p-6 -translate-x-full transition-transform duration-300 ease-in-out rounded-r-[32px] border-r border-white/10">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 bg-[#004a77] text-[#c2e7ff] rounded-2xl flex items-center justify-center border border-white/10 shadow-md">
+                <span class="material-symbols-rounded">newspaper</span>
+            </div>
+            <span class="font-bold text-white text-lg tracking-tight">Xeroid Intelligence</span>
+        </div>
+        
+        <div class="space-y-2">
+            <button onclick="window.fetchByCategory('technology')" class="w-full text-left py-3.5 px-5 rounded-2xl hover:bg-[#28292e] text-[#c4c6d0] hover:text-white flex items-center gap-4 text-xs font-bold transition-all">
+                <span class="material-symbols-rounded text-base text-[#a8c7fa]">devices</span> Technology
             </button>
-            <button onclick="window.fetchByCategory('business')" class="w-full text-left py-4 px-6 rounded-full hover:bg-m3SecCont flex items-center gap-4 text-sm font-medium">
-                <span class="material-symbols-rounded">trending_up</span> Business
+            <button onclick="window.fetchByCategory('business')" class="w-full text-left py-3.5 px-5 rounded-2xl hover:bg-[#28292e] text-[#c4c6d0] hover:text-white flex items-center gap-4 text-xs font-bold transition-all">
+                <span class="material-symbols-rounded text-base text-[#a8c7fa]">trending_up</span> Business
             </button>
-            <button onclick="window.fetchByCategory('sports')" class="w-full text-left py-4 px-6 rounded-full hover:bg-m3SecCont flex items-center gap-4 text-sm font-medium">
-                <span class="material-symbols-rounded">sports_baseball</span> Sports
+            <button onclick="window.fetchByCategory('sports')" class="w-full text-left py-3.5 px-5 rounded-2xl hover:bg-[#28292e] text-[#c4c6d0] hover:text-white flex items-center gap-4 text-xs font-bold transition-all">
+                <span class="material-symbols-rounded text-base text-[#a8c7fa]">sports_baseball</span> Sports
             </button>
         </div>
     </aside>
 
-    <header class="p-4 flex justify-between items-center max-w-2xl mx-auto sticky top-0 bg-m3Bg/90 backdrop-blur-md z-40">
-        <div class="flex items-center gap-2">
-            <button onclick="window.toggleMenu()" class="p-3 rounded-full hover:bg-m3Surf"><span class="material-symbols-rounded">menu</span></button>
-            <h1 id="headerTitle" class="font-bold text-lg">Home</h1>
+    <!-- App Header & Search Bar -->
+    <header class="p-4 sm:p-6 sticky top-0 bg-[#121316]/85 backdrop-blur-2xl z-40 border-b border-white/5">
+        <div class="max-w-7xl mx-auto space-y-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.toggleMenu()" class="w-10 h-10 rounded-full bg-[#1e1f23] text-[#e3e2e6] flex items-center justify-center border border-white/5 hover:bg-[#28292e] active:scale-90 transition-all shadow-sm">
+                        <span class="material-symbols-rounded">menu</span>
+                    </button>
+                    <div>
+                        <h1 id="viewTitle" class="text-lg font-bold tracking-tight text-white leading-none">Xeroid</h1>
+                        <span class="text-[10px] text-[#a8c7fa] font-semibold tracking-wider uppercase">Intelligence Feed</span>
+                    </div>
+                </div>
+
+                <a href="wishlist.html" class="w-10 h-10 rounded-full bg-[#1e1f23] text-[#e3e2e6] flex items-center justify-center border border-white/5 hover:bg-[#28292e] active:scale-90 transition-all shadow-sm relative">
+                    <span class="material-symbols-rounded text-lg">bookmarks</span>
+                    <span id="wishlistCount" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center hidden border-2 border-[#121316]">0</span>
+                </a>
+            </div>
+
+            <!-- Search Input -->
+            <div class="flex items-center px-4 py-3 gap-3 max-w-2xl mx-auto bg-[#1e1f23] border border-white/10 rounded-full shadow-inner focus-within:border-[#a8c7fa] transition-all">
+                <span class="material-symbols-rounded text-[#8e919e]">search</span>
+                <input type="text" id="newsQuery" onkeyup="if(event.key==='Enter') window.searchNews()" placeholder="Search intelligence stories..." class="bg-transparent w-full outline-none text-xs font-medium text-white placeholder-[#8e919e]">
+            </div>
         </div>
-        <button onclick="showView('wishlist')" class="p-3 rounded-full hover:bg-m3Surf relative">
-            <span class="material-symbols-rounded">bookmarks</span>
-            <span id="wishlistCount" class="absolute top-2 right-2 w-4 h-4 bg-m3Err text-white text-[9px] rounded-full flex items-center justify-center hidden">0</span>
-        </button>
     </header>
 
-    <main class="max-w-2xl mx-auto px-4">
-        
-        <div id="view-home" class="view active">
-            <div class="search-anchor flex items-center gap-4 mb-6">
-                <span class="material-symbols-rounded text-slate-500">search</span>
-                <input type="text" id="newsQuery" onkeyup="if(event.key==='Enter') window.searchNews()" placeholder="Search intelligence..." class="bg-transparent w-full outline-none text-sm">
+   <!-- Main Grid Content Stream -->
+<main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+</main>
+
+    <!-- Floating Navigation Bar (Android 14 Dock) -->
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xs bg-[#1e1f23]/90 backdrop-blur-2xl border border-white/10 p-2.5 rounded-full flex justify-around items-center z-50 shadow-2xl">
+        <a href="index.html" class="flex flex-col items-center group">
+            <div class="bg-[#004a77] text-[#c2e7ff] px-5 py-1.5 rounded-full transition-all group-active:scale-90">
+                <span class="material-symbols-rounded text-sm" style="font-variation-settings: 'FILL' 1">home</span>
             </div>
-            <div id="newsGrid" class="space-y-4"></div>
-            <button id="loadMoreBtn" onclick="window.loadMore()" class="w-full py-5 mt-8 bg-m3PrimCont text-m3Prim rounded-[24px] font-bold text-sm mb-10">Load More Intelligence</button>
-        </div>
-
-        <div id="view-details" class="view">
-            <button onclick="showView('home')" class="p-2 -ml-2 text-m3Prim mb-4"><span class="material-symbols-rounded text-3xl">arrow_back</span></button>
-            <div id="detailsContent"></div>
-        </div>
-
-        <div id="view-wishlist" class="view">
-            <h2 class="text-2xl font-bold mb-6 px-1">Library</h2>
-            <div id="wishlistGrid" class="space-y-4"></div>
-        </div>
-    </main>
-
-    <nav class="fixed bottom-0 left-0 right-0 bg-m3Surf/95 backdrop-blur-md border-t border-slate-200 h-20 flex items-center justify-around z-50">
-        <button onclick="showView('home')" id="nav-home" class="nav-item active flex flex-col items-center gap-1">
-            <div class="nav-pill"><span class="material-symbols-rounded">home</span></div>
-            <span class="text-[10px] font-medium">Home</span>
-        </button>
-        <button onclick="showView('wishlist')" id="nav-wishlist" class="nav-item flex flex-col items-center gap-1">
-            <div class="nav-pill"><span class="material-symbols-rounded">favorite</span></div>
-            <span class="text-[10px] font-medium">Wishlist</span>
-        </button>
+            <span class="text-[10px] font-bold mt-1 text-[#a8c7fa]">Home</span>
+        </a>
+        <a href="wishlist.html" class="flex flex-col items-center group text-[#8e919e] hover:text-white transition-colors">
+            <div class="px-5 py-1.5 rounded-full group-active:scale-90">
+                <span class="material-symbols-rounded text-sm">favorite</span>
+            </div>
+            <span class="text-[10px] font-bold mt-1">Saved</span>
+        </a>
     </nav>
 
-    <script>
-        const API_KEY = 'pub_42e9fc3d5f024a249292caf9f3aef7f6';
-        const STORAGE_KEY = 'XeroidNews_Wishlist';
-
-        let currentArticles = [];
-        let wishlist = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        let currentLang = 'en';
-
-        // SNACKBAR FUNCTION
-        function showToast(message) {
-            const snack = document.getElementById("snackbar");
-            snack.innerText = message;
-            snack.className = "show";
-            setTimeout(() => { snack.className = snack.className.replace("show", ""); }, 3000);
-        }
-
-        window.toggleWishlist = (url) => {
-            const article = currentArticles.find(a => a.url === url) || wishlist.find(a => a.url === url);
-            if (!article) return;
-
-            const index = wishlist.findIndex(item => item.url === url);
-            if (index > -1) {
-                wishlist.splice(index, 1);
-                showToast("Removed from Library");
-            } else {
-                wishlist.push(article);
-                showToast("Added to Library");
-            }
-            
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlist));
-            updateWishlistUI();
-            renderHome(currentArticles);
-            if (document.getElementById('view-wishlist').classList.contains('active')) window.renderWishlist();
-        };
-
-        function showView(viewName) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + viewName).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            const activeNav = document.getElementById('nav-' + viewName);
-            if(activeNav) activeNav.classList.add('active');
-            
-            document.getElementById('headerTitle').innerText = viewName.charAt(0).toUpperCase() + viewName.slice(1);
-            window.scrollTo(0, 0);
-            if(viewName === 'wishlist') window.renderWishlist();
-        }
-
-        window.toggleMenu = () => {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const isOpen = sidebar.style.transform === 'translateX(0px)';
-            sidebar.style.transform = isOpen ? 'translateX(-100%)' : 'translateX(0px)';
-            overlay.classList.toggle('hidden', isOpen);
-            document.body.style.overflow = isOpen ? 'auto' : 'hidden';
-        };
-
-        window.fetchNews = async (query = 'trending', isLoadMore = false, category = '') => {
-            const grid = document.getElementById('newsGrid');
-            if (!isLoadMore) grid.innerHTML = Array(3).fill('<div class="skeleton h-48 rounded-[28px]"></div>').join('');
-
-            let url = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&q=${query}`;
-            if (category) url = `https://newsdata.io/api/1/news?apikey=${API_KEY}&language=${currentLang}&category=${category}`;
-
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.results) {
-                    const formatted = data.results.map(art => ({
-                        title: art.title,
-                        description: art.description || 'Accessing full brief...',
-                        content: art.content || art.description || 'Content restricted to source link.',
-                        url: art.link,
-                        urlToImage: art.image_url || 'https://via.placeholder.com/600',
-                        source: { name: art.source_id || 'Xeroid Global' }
-                    }));
-                    currentArticles = isLoadMore ? [...currentArticles, ...formatted] : formatted;
-                    renderHome(currentArticles);
-                }
-            } catch (e) {
-                grid.innerHTML = `<div class="p-10 text-center opacity-50 text-sm">Update limit reached. Try later.</div>`;
-            }
-        };
-
-        function renderHome(articles) {
-            const grid = document.getElementById('newsGrid');
-            grid.innerHTML = articles.map((art) => {
-                const isFav = wishlist.some(i => i.url === art.url);
-                return `
-                <div class="m3-card overflow-hidden flex flex-col cursor-pointer" onclick="window.goToDetails('${encodeURIComponent(art.url)}')">
-                    <img src="${art.urlToImage}" class="w-full h-52 object-cover" onerror="this.src='https://via.placeholder.com/600'">
-                    <div class="p-6 relative">
-                        <span class="text-[10px] font-bold uppercase text-m3Prim tracking-widest">${art.source.name}</span>
-                        <h3 class="text-base font-bold mt-1 line-clamp-2 leading-snug">${art.title}</h3>
-                        <button onclick="event.stopPropagation(); window.toggleWishlist('${art.url}')" class="absolute -top-7 right-6 w-14 h-14 bg-m3PrimCont text-m3Prim rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-                            <span class="material-symbols-rounded ${isFav ? 'fill-1' : ''}">${isFav ? 'favorite' : 'favorite_border'}</span>
-                        </button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        window.renderWishlist = () => {
-            const grid = document.getElementById('wishlistGrid');
-            if (wishlist.length === 0) {
-                grid.innerHTML = `<div class="py-20 text-center opacity-30 text-sm">Intelligence Library Empty</div>`;
-                return;
-            }
-            grid.innerHTML = wishlist.map((art) => `
-                <div class="m3-card p-4 flex gap-4 items-center" onclick="window.goToDetails('${encodeURIComponent(art.url)}')">
-                    <img src="${art.urlToImage}" class="w-20 h-20 rounded-2xl object-cover">
-                    <div class="flex-1 overflow-hidden">
-                        <h3 class="text-sm font-bold line-clamp-2 leading-tight">${art.title}</h3>
-                        <p class="text-[10px] uppercase text-m3Prim mt-1 font-bold">${art.source.name}</p>
-                    </div>
-                    <button onclick="event.stopPropagation(); window.toggleWishlist('${art.url}')" class="p-2 text-m3Err">
-                        <span class="material-symbols-rounded">delete</span>
-                    </button>
-                </div>`).join('');
-        };
-
-        window.goToDetails = (encodedUrl) => {
-            const url = decodeURIComponent(encodedUrl);
-            const art = currentArticles.find(a => a.url === url) || wishlist.find(a => a.url === url);
-            if (!art) return;
-
-            const container = document.getElementById('detailsContent');
-            container.innerHTML = `
-                <img src="${art.urlToImage}" class="w-full h-80 rounded-[32px] object-cover mb-6">
-                <div class="px-2">
-                    <span class="text-m3Prim font-bold text-xs uppercase tracking-widest">${art.source.name}</span>
-                    <h1 class="text-2xl font-bold mt-2 mb-6 leading-tight">${art.title}</h1>
-                    <div class="text-slate-700 leading-relaxed space-y-4 text-base border-l-4 border-m3SecCont pl-6 italic mb-10">
-                        <p>${art.description}</p>
-                    </div>
-                    <a href="${art.url}" target="_blank" class="w-full py-5 bg-m3OnSurf text-white rounded-full font-bold flex items-center justify-center gap-3 shadow-xl mb-12">
-                        <span class="material-symbols-rounded">launch</span> Full Intel Brief
-                    </a>
-                </div>`;
-            showView('details');
-        };
-
-        function updateWishlistUI() {
-            const badge = document.getElementById('wishlistCount');
-            badge.innerText = wishlist.length;
-            badge.classList.toggle('hidden', wishlist.length === 0);
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            window.fetchNews('trending');
-            updateWishlistUI();
-        });
-
-        window.searchNews = () => window.fetchNews(document.getElementById('newsQuery').value || 'trending');
-        window.fetchByCategory = (cat) => { window.fetchNews('', false, cat); window.toggleMenu(); };
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
